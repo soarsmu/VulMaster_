@@ -44,13 +44,19 @@ To replicate VulMaster, ensure that `c_dataset/` is in the root path of this pro
 Training:
 ```
 
-bash 01_train.sh 
+bash 0a_train.sh 
 ```
 
 Testing:
 ```
-bash 02_test.sh
+bash 0b_test.sh
 ```
+
+Compute metrics:
+```
+python calculate_metrics_all_models
+```
+
 
 ## Generate fixes for CWE vulnerable code examples via ChatGPT
 ```
