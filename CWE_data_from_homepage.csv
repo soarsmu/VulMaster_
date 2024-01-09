@@ -1,0 +1,2173 @@
+﻿cwe_id,cwe_name,description,code,analysis
+CWE-119,CWE-119: Improper Restriction of Operations within the Bounds of a Memory Buffer,"The product performs operations on a memory buffer, but it can read from or write to a memory location that is outside of the intended boundary of the buffer.","This example takes an IP address from a user, verifies that it is well formed and then looks up the hostname and copies it into a buffer. 
+(bad code)
+Example Language: C 
+void host_lookup(char *user_supplied_addr){
+struct hostent *hp;
+in_addr_t *addr;
+char hostname[64];
+in_addr_t inet_addr(const char *cp);
+
+/*routine that ensures user_supplied_addr is in the right format for conversion */
+
+validate_addr_form(user_supplied_addr);
+addr = inet_addr(user_supplied_addr);
+hp = gethostbyaddr( addr, sizeof(struct in_addr), AF_INET);
+strcpy(hostname, hp->h_name);
+}
+","This function allocates a buffer of 64 bytes to store the hostname, however there is no guarantee that the hostname will not be larger than 64 bytes. If an attacker specifies an address which resolves to a very large hostname, then the function may overwrite sensitive data or even relinquish control flow to the attacker.ons on a memory buffer, but it can read from or write to a memory location that is outside of the intended boundary of the buffer."
+CWE-119,CWE-119: Improper Restriction of Operations within the Bounds of a Memory Buffer,"The product performs operations on a memory buffer, but it can read from or write to a memory location that is outside of the intended boundary of the buffer.","This example applies an encoding procedure to an input string and stores it into a buffer.
+(bad code)
+Example Language: C 
+char * copy_input(char *user_supplied_string){
+int i, dst_index;
+char *dst_buf = (char*)malloc(4*sizeof(char) * MAX_SIZE);
+if ( MAX_SIZE <= strlen(user_supplied_string) ){
+die(""user string too long, die evil hacker!"");
+}
+dst_index = 0;
+for ( i = 0; i < strlen(user_supplied_string); i++ ){
+if( '&' == user_supplied_string[i] ){
+dst_buf[dst_index++] = '&';
+dst_buf[dst_index++] = 'a';
+dst_buf[dst_index++] = 'm';
+dst_buf[dst_index++] = 'p';
+dst_buf[dst_index++] = ';';
+}
+else if ('<' == user_supplied_string[i] ){
+/* encode to &lt; */
+}
+else dst_buf[dst_index++] = user_supplied_string[i];
+}
+return dst_buf;
+}
+","
+
+ The programmer attempts to encode the ampersand character in the user-controlled string, however the length of the string is validated before the encoding procedure is applied. Furthermore, the programmer assumes encoding expansion will only expand a given character by a factor of 4, while the encoding of the ampersand expands by 5. As a result, when the encoding procedure expands the string it is possible to overflow the destination buffer if the attacker provides a string of many ampersands."
+CWE-119,CWE-119: Improper Restriction of Operations within the Bounds of a Memory Buffer,"The product performs operations on a memory buffer, but it can read from or write to a memory location that is outside of the intended boundary of the buffer.","The following example asks a user for an offset into an array to select an item. 
+(bad code)
+Example Language: C 
+
+int main (int argc, char **argv) {
+char *items[] = {""boat"", ""car"", ""truck"", ""train""};
+int index = GetUntrustedOffset();
+printf(""You selected %s\n"", items[index-1]);
+}
+","
+The programmer allows the user to specify which element in the list to select, however an attacker can provide an out-of-bounds offset, resulting in a buffer over-read (CWE-126)."
+CWE-119,CWE-119: Improper Restriction of Operations within the Bounds of a Memory Buffer,"The product performs operations on a memory buffer, but it can read from or write to a memory location that is outside of the intended boundary of the buffer.","Example 4
+
+In the following code, the method retrieves a value from an array at a specific array index location that is given as an input parameter to the method
+
+(bad code)
+Example Language: C 
+int getValueFromArray(int *array, int len, int index) {
+
+int value;
+
+// check that the array index is less than the maximum
+
+// length of the array
+if (index < len) {
+// get the value at the specified index of the array
+value = array[index];
+}
+// if array index is invalid then output error message
+// and return value indicating error
+else {
+printf(""Value is: %d\n"", array[index]);
+value = -1;
+}
+
+return value;
+}
+","However, this method only verifies that the given array index is less than the maximum length of the array but does not check for the minimum value (CWE-839). This will allow a negative value to be accepted as the input array index, which will result in a out of bounds read (CWE-125) and may allow access to sensitive memory. The input array index should be checked to verify that is within the maximum and minimum range required for the array (CWE-129). In this example the if statement should be modified to include a minimum range check, as shown below."
+CWE-125,CWE-125: Out-of-bounds Read,"The product reads data past the end, or before the beginning, of the intended buffer.","Example 1
+
+In the following code, the method retrieves a value from an array at a specific array index location that is given as an input parameter to the method
+
+(bad code)
+Example Language: C 
+int getValueFromArray(int *array, int len, int index) {
+
+int value;
+
+// check that the array index is less than the maximum
+
+// length of the array
+if (index < len) {
+
+// get the value at the specified index of the array
+value = array[index];
+}
+// if array index is invalid then output error message
+
+// and return value indicating error
+else {
+printf(""Value is: %d\n"", array[index]);
+value = -1;
+}
+
+return value;
+}
+","However, this method only verifies that the given array index is less than the maximum length of the array but does not check for the minimum value (CWE-839). This will allow a negative value to be accepted as the input array index, which will result in a out of bounds read (CWE-125) and may allow access to sensitive memory. The input array index should be checked to verify that is within the maximum and minimum range required for the array (CWE-129). In this example the if statement should be modified to include a minimum range check, as shown below."
+CWE-20,CWE-20: Improper Input Validation,"The product receives input or data, but it does not validate or incorrectly validates that the input has the properties that are required to process the data safely and correctly.","Example 1
+
+This example asks the user for a height and width of an m X n game board with a maximum dimension of 100 squares.
+
+(bad code)
+Example Language: C 
+...
+#define MAX_DIM 100
+...
+/* board dimensions */
+
+int m,n, error;
+board_square_t *board;
+printf(""Please specify the board height: \n"");
+error = scanf(""%d"", &m);
+if ( EOF == error ){
+die(""No integer passed: Die evil hacker!\n"");
+}
+printf(""Please specify the board width: \n"");
+error = scanf(""%d"", &n);
+if ( EOF == error ){
+die(""No integer passed: Die evil hacker!\n"");
+}
+if ( m > MAX_DIM || n > MAX_DIM ) {
+die(""Value too large: Die evil hacker!\n"");
+}
+board = (board_square_t*) malloc( m * n * sizeof(board_square_t));
+...
+","While this code checks to make sure the user cannot specify large, positive integers and consume too much memory, it does not check for negative values supplied by the user. As a result, an attacker can perform a resource consumption (CWE-400) attack against this program by specifying two, large negative values that will not overflow, resulting in a very large memory allocation (CWE-789) and possibly a system crash. Alternatively, an attacker can provide very large negative values which will cause an integer overflow (CWE-190) and unexpected behavior will follow depending on how the values are treated in the remainder of the program."
+CWE-476,"		
+CWE-476: NULL Pointer Dereference","A NULL pointer dereference occurs when the application dereferences a pointer that it expects to be valid, but is NULL, typically causing a crash or exit","Example 1
+
+This example takes an IP address from a user, verifies that it is well formed and then looks up the hostname and copies it into a buffer.
+
+(bad code)
+Example Language: C 
+void host_lookup(char *user_supplied_addr){
+struct hostent *hp;
+in_addr_t *addr;
+char hostname[64];
+in_addr_t inet_addr(const char *cp);
+
+/*routine that ensures user_supplied_addr is in the right format for conversion */
+
+validate_addr_form(user_supplied_addr);
+addr = inet_addr(user_supplied_addr);
+hp = gethostbyaddr( addr, sizeof(struct in_addr), AF_INET);
+strcpy(hostname, hp->h_name);
+}
+","If an attacker provides an address that appears to be well-formed, but the address does not resolve to a hostname, then the call to gethostbyaddr() will return NULL. Since the code does not check the return value from gethostbyaddr (CWE-252), a NULL pointer dereference (CWE-476) would then occur in the call to strcpy()."
+CWE-787,"		
+CWE-787: Out-of-bounds Write","The product writes data past the end, or before the beginning, of the intended buffer.","Example 1
+
+The following code attempts to save four different identification numbers into an array.
+
+(bad code)
+Example Language: C 
+int id_sequence[3];
+
+/* Populate the id array. */
+
+id_sequence[0] = 123;
+id_sequence[1] = 234;
+id_sequence[2] = 345;
+id_sequence[3] = 456;
+","Since the array is only allocated to hold three elements, the valid indices are 0 to 2; so, the assignment to id_sequence[3] is out of bounds."
+CWE-787,"		
+CWE-787: Out-of-bounds Write","The product writes data past the end, or before the beginning, of the intended buffer.","Example 2
+
+In the following code, it is possible to request that memcpy move a much larger segment of memory than assumed:
+
+(bad code)
+Example Language: C 
+int returnChunkSize(void *) {
+
+/* if chunk info is valid, return the size of usable memory,
+
+* else, return -1 to indicate an error
+
+*/
+...
+}
+int main() {
+...
+memcpy(destBuf, srcBuf, (returnChunkSize(destBuf)-1));
+...
+}
+","If returnChunkSize() happens to encounter an error it will return -1. Notice that the return value is not checked before the memcpy operation (CWE-252), so -1 can be passed as the size argument to memcpy() (CWE-805). Because memcpy() assumes that the value is unsigned, it will be interpreted as MAXINT-1 (CWE-195), and therefore will copy far more memory than is likely available to the destination buffer (CWE-787, CWE-788)."
+CWE-787,"		
+CWE-787: Out-of-bounds Write","The product writes data past the end, or before the beginning, of the intended buffer.","Example 3
+
+This code takes an IP address from the user and verifies that it is well formed. It then looks up the hostname and copies it into a buffer.
+
+(bad code)
+Example Language: C 
+void host_lookup(char *user_supplied_addr){
+struct hostent *hp;
+in_addr_t *addr;
+char hostname[64];
+in_addr_t inet_addr(const char *cp);
+
+/*routine that ensures user_supplied_addr is in the right format for conversion */
+
+validate_addr_form(user_supplied_addr);
+addr = inet_addr(user_supplied_addr);
+hp = gethostbyaddr( addr, sizeof(struct in_addr), AF_INET);
+strcpy(hostname, hp->h_name);
+}
+","This function allocates a buffer of 64 bytes to store the hostname. However, there is no guarantee that the hostname will not be larger than 64 bytes. If an attacker specifies an address which resolves to a very large hostname, then the function may overwrite sensitive data or even relinquish control flow to the attacker."
+CWE-787,"		
+CWE-787: Out-of-bounds Write","The product writes data past the end, or before the beginning, of the intended buffer.","Example 4
+
+This code applies an encoding procedure to an input string and stores it into a buffer.
+
+(bad code)
+Example Language: C 
+char * copy_input(char *user_supplied_string){
+int i, dst_index;
+char *dst_buf = (char*)malloc(4*sizeof(char) * MAX_SIZE);
+if ( MAX_SIZE <= strlen(user_supplied_string) ){
+die(""user string too long, die evil hacker!"");
+}
+dst_index = 0;
+for ( i = 0; i < strlen(user_supplied_string); i++ ){
+if( '&' == user_supplied_string[i] ){
+dst_buf[dst_index++] = '&';
+dst_buf[dst_index++] = 'a';
+dst_buf[dst_index++] = 'm';
+dst_buf[dst_index++] = 'p';
+dst_buf[dst_index++] = ';';
+}
+else if ('<' == user_supplied_string[i] ){
+
+/* encode to &lt; */
+}
+else dst_buf[dst_index++] = user_supplied_string[i];
+}
+return dst_buf;
+}
+","The programmer attempts to encode the ampersand character in the user-controlled string. However, the length of the string is validated before the encoding procedure is applied. Furthermore, the programmer assumes encoding expansion will only expand a given character by a factor of 4, while the encoding of the ampersand expands by 5. As a result, when the encoding procedure expands the string it is possible to overflow the destination buffer if the attacker provides a string of many ampersands."
+CWE-787,"		
+CWE-787: Out-of-bounds Write","The product writes data past the end, or before the beginning, of the intended buffer.","Example 5
+
+In the following C/C++ code, a utility function is used to trim trailing whitespace from a character string. The function copies the input string to a local character string and uses a while statement to remove the trailing whitespace by moving backward through the string and overwriting whitespace with a NUL character.
+
+(bad code)
+Example Language: C 
+char* trimTrailingWhitespace(char *strMessage, int length) {
+char *retMessage;
+char *message = malloc(sizeof(char)*(length+1));
+
+// copy input string to a temporary string
+char message[length+1];
+int index;
+for (index = 0; index < length; index++) {
+message[index] = strMessage[index];
+}
+message[index] = '\0';
+
+// trim trailing whitespace
+int len = index-1;
+while (isspace(message[len])) {
+message[len] = '\0';
+len--;
+}
+
+// return string without trailing whitespace
+retMessage = message;
+return retMessage;
+}
+","However, this function can cause a buffer underwrite if the input character string contains all whitespace. On some systems the while statement will move backwards past the beginning of a character string and will call the isspace() function on an address outside of the bounds of the local buffer."
+CWE-787,"		
+CWE-787: Out-of-bounds Write","The product writes data past the end, or before the beginning, of the intended buffer.","Example 6
+
+The following code allocates memory for a maximum number of widgets. It then gets a user-specified number of widgets, making sure that the user does not request too many. It then initializes the elements of the array using InitializeWidget(). Because the number of widgets can vary for each request, the code inserts a NULL pointer to signify the location of the last widget.
+
+(bad code)
+Example Language: C 
+int i;
+unsigned int numWidgets;
+Widget **WidgetList;
+
+numWidgets = GetUntrustedSizeValue();
+if ((numWidgets == 0) || (numWidgets > MAX_NUM_WIDGETS)) {
+ExitError(""Incorrect number of widgets requested!"");
+}
+WidgetList = (Widget **)malloc(numWidgets * sizeof(Widget *));
+printf(""WidgetList ptr=%p\n"", WidgetList);
+for(i=0; i<numWidgets; i++) {
+WidgetList[i] = InitializeWidget();
+}
+WidgetList[numWidgets] = NULL;
+showWidgets(WidgetList);
+","However, this code contains an off-by-one calculation error (CWE-193). It allocates exactly enough space to contain the specified number of widgets, but it does not include the space for the NULL pointer. As a result, the allocated buffer is smaller than it is supposed to be (CWE-131). So if the user ever requests MAX_NUM_WIDGETS, there is an out-of-bounds write (CWE-787) when the NULL is assigned. Depending on the environment and compilation settings, this could cause memory corruption."
+CWE-787,"		
+CWE-787: Out-of-bounds Write","The product writes data past the end, or before the beginning, of the intended buffer.","Example 7
+
+The following code may result in a buffer underwrite, if find() returns a negative value to indicate that ch is not found in srcBuf:
+
+(bad code)
+Example Language: C 
+int main() {
+...
+strncpy(destBuf, &srcBuf[find(srcBuf, ch)], 1024);
+...
+}
+","If the index to srcBuf is somehow under user control, this is an arbitrary write-what-where condition."
+CWE-190,CWE-190: Integer Overflow or Wraparound,"The product performs a calculation that can produce an integer overflow or wraparound, when the logic assumes that the resulting value will always be larger than the original value. This can introduce other weaknesses when the calculation is used for resource management or execution control.","Example 1
+
+The following image processing code allocates a table for images.
+
+(bad code)
+Example Language: C 
+img_t table_ptr; /*struct containing img data, 10kB each*/
+int num_imgs;
+...
+num_imgs = get_num_imgs();
+table_ptr = (img_t*)malloc(sizeof(img_t)*num_imgs);
+...
+","This code intends to allocate a table of size num_imgs, however as num_imgs grows large, the calculation determining the size of the list will eventually overflow (CWE-190). This will result in a very small list to be allocated instead. If the subsequent code operates on the list as if it were num_imgs long, it may result in many types of out-of-bounds problems (CWE-119)."
+CWE-190,CWE-190: Integer Overflow or Wraparound,"The product performs a calculation that can produce an integer overflow or wraparound, when the logic assumes that the resulting value will always be larger than the original value. This can introduce other weaknesses when the calculation is used for resource management or execution control.","Example 2
+
+The following code excerpt from OpenSSH 3.3 demonstrates a classic case of integer overflow:
+
+(bad code)
+Example Language: C 
+nresp = packet_get_int();
+if (nresp > 0) {
+response = xmalloc(nresp*sizeof(char*));
+for (i = 0; i < nresp; i++) response[i] = packet_get_string(NULL);
+}
+","If nresp has the value 1073741824 and sizeof(char*) has its typical value of 4, then the result of the operation nresp*sizeof(char*) overflows, and the argument to xmalloc() will be 0. Most malloc() implementations will happily allocate a 0-byte buffer, causing the subsequent loop iterations to overflow the heap buffer response."
+CWE-190,CWE-190: Integer Overflow or Wraparound,"The product performs a calculation that can produce an integer overflow or wraparound, when the logic assumes that the resulting value will always be larger than the original value. This can introduce other weaknesses when the calculation is used for resource management or execution control.","Example 3
+
+Integer overflows can be complicated and difficult to detect. The following example is an attempt to show how an integer overflow may lead to undefined looping behavior:
+
+(bad code)
+Example Language: C 
+short int bytesRec = 0;
+char buf[SOMEBIGNUM];
+
+while(bytesRec < MAXGET) {
+bytesRec += getFromInput(buf+bytesRec);
+}
+","In the above case, it is entirely possible that bytesRec may overflow, continuously creating a lower number than MAXGET and also overwriting the first MAXGET-1 bytes of buf."
+CWE-190,CWE-190: Integer Overflow or Wraparound,"The product performs a calculation that can produce an integer overflow or wraparound, when the logic assumes that the resulting value will always be larger than the original value. This can introduce other weaknesses when the calculation is used for resource management or execution control.","Example 4
+
+In this example the method determineFirstQuarterRevenue is used to determine the first quarter revenue for an accounting/business application. The method retrieves the monthly sales totals for the first three months of the year, calculates the first quarter sales totals from the monthly sales totals, calculates the first quarter revenue based on the first quarter sales, and finally saves the first quarter revenue results to the database.
+
+(bad code)
+Example Language: C 
+#define JAN 1
+#define FEB 2
+#define MAR 3
+
+short getMonthlySales(int month) {...}
+
+float calculateRevenueForQuarter(short quarterSold) {...}
+
+int determineFirstQuarterRevenue() {
+
+// Variable for sales revenue for the quarter
+float quarterRevenue = 0.0f;
+
+short JanSold = getMonthlySales(JAN); /* Get sales in January */
+short FebSold = getMonthlySales(FEB); /* Get sales in February */
+short MarSold = getMonthlySales(MAR); /* Get sales in March */
+
+// Calculate quarterly total
+short quarterSold = JanSold + FebSold + MarSold;
+
+// Calculate the total revenue for the quarter
+quarterRevenue = calculateRevenueForQuarter(quarterSold);
+
+saveFirstQuarterRevenue(quarterRevenue);
+
+return 0;
+}
+","However, in this example the primitive type short int is used for both the monthly and the quarterly sales variables. In C the short int primitive type has a maximum value of 32768. This creates a potential integer overflow if the value for the three monthly sales adds up to more than the maximum value for the short int primitive type. An integer overflow can lead to data corruption, unexpected behavior, infinite loops and system crashes. To correct the situation the appropriate primitive type should be used, as in the example below, and/or provide some validation mechanism to ensure that the maximum value for the primitive type is not exceeded."
+CWE-362,CWE-362: Concurrent Execution using Shared Resource with Improper Synchronization ('Race Condition'),"The product contains a code sequence that can run concurrently with other code, and the code sequence requires temporary, exclusive access to a shared resource, but a timing window exists in which the shared resource can be modified by another code sequence that is operating concurrently.","Example 1
+
+The following function attempts to acquire a lock in order to perform operations on a shared resource.
+
+(bad code)
+Example Language: C 
+void f(pthread_mutex_t *mutex) {
+pthread_mutex_lock(mutex);
+
+/* access shared resource */
+
+
+pthread_mutex_unlock(mutex);
+}
+","However, the code does not check the value returned by pthread_mutex_lock() for errors. If pthread_mutex_lock() cannot acquire the mutex for any reason, the function may introduce a race condition into the program and result in undefined behavior.
+
+In order to avoid data races, correctly written programs must check the result of thread synchronization functions and appropriately handle all errors, either by attempting to recover from them or reporting them to higher levels.
+
+(good code)
+Example Language: C 
+int f(pthread_mutex_t *mutex) {
+int result;
+
+result = pthread_mutex_lock(mutex);
+if (0 != result)
+return result;
+
+
+/* access shared resource */
+
+
+return pthread_mutex_unlock(mutex);
+}"
+CWE-416,CWE-416: Use After Free,"Referencing memory after it has been freed can cause a program to crash, use unexpected values, or execute code.","Example 1
+
+The following example demonstrates the weakness.
+
+(bad code)
+Example Language: C 
+#include <stdio.h>
+#include <unistd.h>
+#define BUFSIZER1 512
+#define BUFSIZER2 ((BUFSIZER1/2) - 8)
+int main(int argc, char **argv) {
+char *buf1R1;
+char *buf2R1;
+char *buf2R2;
+char *buf3R2;
+buf1R1 = (char *) malloc(BUFSIZER1);
+buf2R1 = (char *) malloc(BUFSIZER1);
+free(buf2R1);
+buf2R2 = (char *) malloc(BUFSIZER2);
+buf3R2 = (char *) malloc(BUFSIZER2);
+strncpy(buf2R1, argv[1], BUFSIZER1-1);
+free(buf1R1);
+free(buf2R2);
+free(buf3R2);
+}",none
+CWE-416,CWE-416: Use After Free,"Referencing memory after it has been freed can cause a program to crash, use unexpected values, or execute code.","Example 2
+
+The following code illustrates a use after free error:
+
+(bad code)
+Example Language: C 
+char* ptr = (char*)malloc (SIZE);
+if (err) {
+abrt = 1;
+free(ptr);
+}
+...
+if (abrt) {
+logError(""operation aborted before commit"", ptr);
+}
+","When an error occurs, the pointer is immediately freed. However, this pointer is later incorrectly used in the logError function."
+CWE-400,"		
+CWE-400: Uncontrolled Resource Consumption","The product does not properly control the allocation and maintenance of a limited resource, thereby enabling an actor to influence the amount of resources consumed, eventually leading to the exhaustion of available resources.","Example 1
+
+This code allocates a socket and forks each time it receives a new connection.
+
+(bad code)
+Example Language: C 
+sock=socket(AF_INET, SOCK_STREAM, 0);
+while (1) {
+newsock=accept(sock, ...);
+printf(""A connection has been accepted\n"");
+pid = fork();
+}
+","The program does not track how many connections have been made, and it does not limit the number of connections. Because forking is a relatively expensive operation, an attacker would be able to cause the system to run out of CPU, processes, or memory by making a large number of connections. Alternatively, an attacker could consume all available connections, preventing others from accessing the system remotely."
+CWE-400,"		
+CWE-400: Uncontrolled Resource Consumption","The product does not properly control the allocation and maintenance of a limited resource, thereby enabling an actor to influence the amount of resources consumed, eventually leading to the exhaustion of available resources.","Example 2
+
+In the following example a server socket connection is used to accept a request to store data on the local file system using a specified filename. 
+
+(bad code)
+Example Language: C 
+int writeDataFromSocketToFile(char *host, int port)
+{
+
+char filename[FILENAME_SIZE];
+char buffer[BUFFER_SIZE];
+int socket = openSocketConnection(host, port);
+
+if (socket < 0) {
+printf(""Unable to open socket connection"");
+return(FAIL);
+}
+if (getNextMessage(socket, filename, FILENAME_SIZE) > 0) {
+if (openFileToWrite(filename) > 0) {
+while (getNextMessage(socket, buffer, BUFFER_SIZE) > 0){
+if (!(writeToFile(buffer) > 0))
+break;
+}
+}
+closeFile();
+}
+closeSocket(socket);
+}
+","The method openSocketConnection establishes a server socket to accept requests from a client. When a client establishes a connection to this service the getNextMessage method is first used to retrieve from the socket the name of the file to store the data, the openFileToWrite method will validate the filename and open a file to write to on the local file system. The getNextMessage is then used within a while loop to continuously read data from the socket and output the data to the file until there is no longer any data from the socket. This example creates a situation where data can be dumped to a file on the local file system without any limits on the size of the file. This could potentially exhaust file or disk resources and/or limit other clients' ability to access the service."
+CWE-400,"		
+CWE-400: Uncontrolled Resource Consumption","The product does not properly control the allocation and maintenance of a limited resource, thereby enabling an actor to influence the amount of resources consumed, eventually leading to the exhaustion of available resources.","Example 3
+
+In the following example, the processMessage method receives a two dimensional character array containing the message to be processed. The two-dimensional character array contains the length of the message in the first character array and the message body in the second character array. The getMessageLength method retrieves the integer value of the length from the first character array. After validating that the message length is greater than zero, the body character array pointer points to the start of the second character array of the two-dimensional character array and memory is allocated for the new body character array.
+
+(bad code)
+Example Language: C 
+
+/* process message accepts a two-dimensional character array of the form [length][body] containing the message to be processed */
+int processMessage(char **message)
+{
+char *body;
+
+int length = getMessageLength(message[0]);
+
+if (length > 0) {
+body = &message[1][0];
+processMessageBody(body);
+return(SUCCESS);
+}
+else {
+printf(""Unable to process message; invalid message length"");
+return(FAIL);
+}
+}
+","This example creates a situation where the length of the body character array can be very large and will consume excessive memory, exhausting system resources. This can be avoided by restricting the length of the second character array with a maximum length check
+
+Also, consider changing the type from 'int' to 'unsigned int', so that you are always guaranteed that the number is positive. This might not be possible if the protocol specifically requires allowing negative values, or if you cannot control the return value from getMessageLength(), but it could simplify the check to ensure the input is positive, and eliminate other errors such as signed-to-unsigned conversion errors (CWE-195) that may occur elsewhere in the code.
+
+(good code)
+Example Language: C 
+unsigned int length = getMessageLength(message[0]);
+if ((length > 0) && (length < MAX_LENGTH)) {...}"
+CWE-401,"		
+CWE-400: Uncontrolled Resource Consumption","The product does not properly control the allocation and maintenance of a limited resource, thereby enabling an actor to influence the amount of resources consumed, eventually leading to the exhaustion of available resources.","Example 1
+
+The following C function leaks a block of allocated memory if the call to read() does not return the expected number of bytes:
+
+(bad code)
+Example Language: C 
+char* getBlock(int fd) {
+char* buf = (char*) malloc(BLOCK_SIZE);
+if (!buf) {
+return NULL;
+}
+if (read(fd, buf, BLOCK_SIZE) != BLOCK_SIZE) {
+
+return NULL;
+}
+return buf;
+}",none
+CWE-772,"		
+CWE-772: Missing Release of Resource after Effective Lifetime","The product does not release a resource after its effective lifetime has ended, i.e., after the resource is no longer needed.","Example 2
+
+The following code attempts to open a new connection to a database, process the results returned by the database, and close the allocated SqlConnection object.
+
+(bad code)
+Example Language: C# 
+SqlConnection conn = new SqlConnection(connString);
+SqlCommand cmd = new SqlCommand(queryString);
+cmd.Connection = conn;
+conn.Open();
+SqlDataReader rdr = cmd.ExecuteReader();
+HarvestResults(rdr);
+conn.Connection.Close();
+","The problem with the above code is that if an exception occurs while executing the SQL or processing the results, the SqlConnection object is not closed. If this happens often enough, the database will run out of available cursors and not be able to execute any more SQL queries."
+CWE-772,"		
+CWE-772: Missing Release of Resource after Effective Lifetime","The product does not release a resource after its effective lifetime has ended, i.e., after the resource is no longer needed.","Example 5
+
+The following C function does not close the file handle it opens if an error occurs. If the process is long-lived, the process can run out of file handles.
+
+(bad code)
+Example Language: C 
+int decodeFile(char* fName) {
+char buf[BUF_SZ];
+FILE* f = fopen(fName, ""r"");
+if (!f) {
+printf(""cannot open %s\n"", fName);
+return DECODE_FAIL;
+}
+else {
+while (fgets(buf, BUF_SZ, f)) {
+if (!checkChecksum(buf)) {
+return DECODE_FAIL;
+}
+else {
+decodeBlock(buf);
+}
+}
+}
+fclose(f);
+return DECODE_SUCCESS;
+}",none
+CWE-269,"		
+CWE-269: Improper Privilege Management","The product does not properly assign, modify, track, or check privileges for an actor, creating an unintended sphere of control for that actor.","Example 1
+
+The following example demonstrates the weakness.
+
+(bad code)
+Example Language: C 
+seteuid(0);
+/* do some stuff */
+
+seteuid(getuid());",none
+CWE-120,CWE-120: Buffer Copy without Checking Size of Input ('Classic Buffer Overflow'),"The product copies an input buffer to an output buffer without verifying that the size of the input buffer is less than the size of the output buffer, leading to a buffer overflow.","Example 1
+
+The following code asks the user to enter their last name and then attempts to store the value entered in the last_name array.
+
+(bad code)
+Example Language: C 
+char last_name[20];
+printf (""Enter your last name: "");
+scanf (""%s"", last_name);
+","The problem with the code above is that it does not restrict or limit the size of the name entered by the user. If the user enters ""Very_very_long_last_name"" which is 24 characters long, then a buffer overflow will occur since the array can only hold 20 characters total."
+CWE-120,CWE-120: Buffer Copy without Checking Size of Input ('Classic Buffer Overflow'),"The product copies an input buffer to an output buffer without verifying that the size of the input buffer is less than the size of the output buffer, leading to a buffer overflow.","Example 2
+
+The following code attempts to create a local copy of a buffer to perform some manipulations to the data.
+
+(bad code)
+Example Language: C 
+void manipulate_string(char * string){
+char buf[24];
+strcpy(buf, string);
+...
+}
+","However, the programmer does not ensure that the size of the data pointed to by string will fit in the local buffer and copies the data with the potentially dangerous strcpy() function. This may result in a buffer overflow condition if an attacker can influence the contents of the string parameter"
+CWE-120,CWE-120: Buffer Copy without Checking Size of Input ('Classic Buffer Overflow'),"The product copies an input buffer to an output buffer without verifying that the size of the input buffer is less than the size of the output buffer, leading to a buffer overflow.","Example 3
+
+The code below calls the gets() function to read in data from the command line.
+
+(bad code)
+Example Language: C 
+char buf[24];
+printf(""Please enter your name and press <Enter>\n"");
+gets(buf);
+...
+}
+","However, gets() is inherently unsafe, because it copies all input from STDIN to the buffer without checking size. This allows the user to provide a string that is larger than the buffer size, resulting in an overflow condition."
+CWE-120,CWE-120: Buffer Copy without Checking Size of Input ('Classic Buffer Overflow'),"The product copies an input buffer to an output buffer without verifying that the size of the input buffer is less than the size of the output buffer, leading to a buffer overflow.","Example 4
+
+In the following example, a server accepts connections from a client and processes the client request. After accepting a client connection, the program will obtain client information using the gethostbyaddr method, copy the hostname of the client that connected to a local variable and output the hostname of the client to a log file.
+
+(bad code)
+Example Language: C 
+...
+struct hostent *clienthp;
+char hostname[MAX_LEN];
+
+// create server socket, bind to server address and listen on socket
+...
+
+// accept client connections and process requests
+int count = 0;
+for (count = 0; count < MAX_CONNECTIONS; count++) {
+
+int clientlen = sizeof(struct sockaddr_in);
+int clientsocket = accept(serversocket, (struct sockaddr *)&clientaddr, &clientlen);
+
+if (clientsocket >= 0) {
+clienthp = gethostbyaddr((char*) &clientaddr.sin_addr.s_addr, sizeof(clientaddr.sin_addr.s_addr), AF_INET);
+strcpy(hostname, clienthp->h_name);
+logOutput(""Accepted client connection from host "", hostname);
+
+// process client request
+...
+close(clientsocket);
+}
+}
+close(serversocket);
+
+...
+","However, the hostname of the client that connected may be longer than the allocated size for the local hostname variable. This will result in a buffer overflow when copying the client hostname to the local variable using the strcpy method."
+CWE-415,"		
+CWE-415: Double Free","The product calls free() twice on the same memory address, potentially leading to modification of unexpected memory locations.","Example 1
+
+The following code shows a simple example of a double free vulnerability.
+
+(bad code)
+Example Language: C 
+char* ptr = (char*)malloc (SIZE);
+...
+if (abrt) {
+free(ptr);
+}
+...
+free(ptr);
+Double free vulnerabilities have two common (and sometimes overlapping) causes:
+","
+Error conditions and other exceptional circumstances
+Confusion over which part of the program is responsible for freeing the memory
+Although some double free vulnerabilities are not much more complicated than this example, most are spread out across hundreds of lines of code or even different files. Programmers seem particularly susceptible to freeing global variables more than once."
+CWE-415,"		
+CWE-415: Double Free","The product calls free() twice on the same memory address, potentially leading to modification of unexpected memory locations.","Example 2
+
+While contrived, this code should be exploitable on Linux distributions that do not ship with heap-chunk check summing turned on.
+
+(bad code)
+Example Language: C 
+#include <stdio.h>
+#include <unistd.h>
+#define BUFSIZE1 512
+#define BUFSIZE2 ((BUFSIZE1/2) - 8)
+
+int main(int argc, char **argv) {
+char *buf1R1;
+char *buf2R1;
+char *buf1R2;
+buf1R1 = (char *) malloc(BUFSIZE2);
+buf2R1 = (char *) malloc(BUFSIZE2);
+free(buf1R1);
+free(buf2R1);
+buf1R2 = (char *) malloc(BUFSIZE1);
+strncpy(buf1R2, argv[1], BUFSIZE1-1);
+free(buf2R1);
+free(buf1R2);
+}",none
+CWE-835,CWE-835: Loop with Unreachable Exit Condition ('Infinite Loop'),"The product contains an iteration or loop with an exit condition that cannot be reached, i.e., an infinite loop.","In the following code the method processMessagesFromServer attempts to establish a connection to a server and read and process messages from the server. The method uses a do/while loop to continue trying to establish the connection to the server when an attempt fails.
+
+(bad code)
+Example Language: C 
+int processMessagesFromServer(char *hostaddr, int port) {
+...
+int servsock;
+int connected;
+struct sockaddr_in servaddr;
+
+// create socket to connect to server
+servsock = socket( AF_INET, SOCK_STREAM, 0);
+memset( &servaddr, 0, sizeof(servaddr));
+servaddr.sin_family = AF_INET;
+servaddr.sin_port = htons(port);
+servaddr.sin_addr.s_addr = inet_addr(hostaddr);
+
+do {
+
+// establish connection to server
+connected = connect(servsock, (struct sockaddr *)&servaddr, sizeof(servaddr));
+
+// if connected then read and process messages from server
+if (connected > -1) {
+
+// read and process messages
+...
+}
+
+// keep trying to establish connection to the server
+} while (connected < 0);
+
+// close socket and return success or failure
+...
+}
+","However, this will create an infinite loop if the server does not respond. This infinite loop will consume system resources and can be used to create a denial of service attack. To resolve this a counter should be used to limit the number of attempts to establish a connection to the server, as in the following code.
+
+(good code)
+Example Language: C 
+int processMessagesFromServer(char *hostaddr, int port) {
+...
+// initialize number of attempts counter
+int count = 0;
+do {
+
+// establish connection to server
+connected = connect(servsock, (struct sockaddr *)&servaddr, sizeof(servaddr));
+
+// increment counter
+count++;
+
+// if connected then read and process messages from server
+if (connected > -1) {
+
+// read and process messages
+...
+}
+
+// keep trying to establish connection to the server
+
+// up to a maximum number of attempts
+} while (connected < 0 && count < MAX_ATTEMPTS);
+
+// close socket and return success or failure
+...
+}"
+CWE-295,CWE-295: Improper Certificate Validation,"The product does not validate, or incorrectly validates, a certificate.","Example 1
+
+This code checks the certificate of a connected peer.
+
+(bad code)
+Example Language: C 
+if ((cert = SSL_get_peer_certificate(ssl)) && host)
+foo=SSL_get_verify_result(ssl);
+
+if ((X509_V_OK==foo) || X509_V_ERR_SELF_SIGNED_CERT_IN_CHAIN==foo))
+
+// certificate looks good, host can be trusted
+","In this case, because the certificate is self-signed, there was no external authority that could prove the identity of the host. The program could be communicating with a different system that is spoofing the host, e.g. by poisoning the DNS cache or using an Adversary-in-the-Middle (AITM) attack to modify the traffic from server to client."
+CWE-295,CWE-295: Improper Certificate Validation,"The product does not validate, or incorrectly validates, a certificate.","Example 2
+
+The following OpenSSL code obtains a certificate and verifies it.
+
+(bad code)
+Example Language: C 
+cert = SSL_get_peer_certificate(ssl);
+if (cert && (SSL_get_verify_result(ssl)==X509_V_OK)) {
+
+// do secret things
+}
+","Even though the ""verify"" step returns X509_V_OK, this step does not include checking the Common Name against the name of the host. That is, there is no guarantee that the certificate is for the desired host. The SSL connection could have been established with a malicious host that provided a valid certificate"
+CWE-295,CWE-295: Improper Certificate Validation,"The product does not validate, or incorrectly validates, a certificate.","Example 3
+
+The following OpenSSL code ensures that there is a certificate and allows the use of expired certificates.
+
+(bad code)
+Example Language: C 
+if (cert = SSL_get_peer(certificate(ssl)) {
+foo=SSL_get_verify_result(ssl);
+if ((X509_V_OK==foo) || (X509_V_ERR_CERT_HAS_EXPIRED==foo))
+
+//do stuff
+","If the call to SSL_get_verify_result() returns X509_V_ERR_CERT_HAS_EXPIRED, this means that the certificate has expired. As time goes on, there is an increasing chance for attackers to compromise the certificate."
+CWE-295,CWE-295: Improper Certificate Validation,"The product does not validate, or incorrectly validates, a certificate.","Example 4
+
+The following OpenSSL code ensures that there is a certificate before continuing execution.
+
+(bad code)
+Example Language: C 
+if (cert = SSL_get_peer_certificate(ssl)) {
+
+// got a certificate, do secret things
+","Because this code does not use SSL_get_verify_results() to check the certificate, it could accept certificates that have been revoked (X509_V_ERR_CERT_REVOKED). The software could be communicating with a malicious host."
+CWE-295,CWE-295: Improper Certificate Validation,"The product does not validate, or incorrectly validates, a certificate.","Example 5
+
+The following OpenSSL code ensures that the host has a certificate.
+
+(bad code)
+Example Language: C 
+if (cert = SSL_get_peer_certificate(ssl)) {
+
+// got certificate, host can be trusted
+
+//foo=SSL_get_verify_result(ssl);
+
+//if (X509_V_OK==foo) ...
+}
+","Note that the code does not call SSL_get_verify_result(ssl), which effectively disables the validation step that checks the certificate."
+CWE-674,"		
+CWE-674: Uncontrolled Recursion","The product does not properly control the amount of recursion that takes place, consuming excessive resources, such as allocated memory or the program stack.","Example 1
+
+In this example a mistake exists in the code where the exit condition contained in flg is never called. This results in the function calling itself over and over again until the stack is exhausted.
+
+(bad code)
+Example Language: C 
+void do_something_recursive (int flg)
+{
+... // Do some real work here, but the value of flg is unmodified
+if (flg) { do_something_recursive (flg); } // flg is never modified so it is always TRUE - this call will continue until the stack explodes
+}
+int flag = 1; // Set to TRUE
+do_something_recursive (flag);
+
+int flag = 1; // Set to TRUE
+do_something_recursive (flag);","Note that the only difference between the Good and Bad examples is that the recursion flag will change value and cause the recursive call to return.
+
+(good code)
+Example Language: C 
+void do_something_recursive (int flg)
+{
+... // Do some real work here
+// Modify value of flg on done condition
+if (flg) { do_something_recursive (flg); } // returns when flg changes to 0
+}"
+CWE-404,"		
+CWE-404: Improper Resource Shutdown or Release",The product does not release or incorrectly releases a resource before it is made available for re-use.,"Example 4
+
+The following C function does not close the file handle it opens if an error occurs. If the process is long-lived, the process can run out of file handles.
+
+(bad code)
+Example Language: C 
+int decodeFile(char* fName) {
+char buf[BUF_SZ];
+FILE* f = fopen(fName, ""r"");
+if (!f) {
+printf(""cannot open %s\n"", fName);
+return DECODE_FAIL;
+}
+else {
+while (fgets(buf, BUF_SZ, f)) {
+if (!checkChecksum(buf)) {
+return DECODE_FAIL;
+}
+else {
+decodeBlock(buf);
+}
+}
+}
+fclose(f);
+return DECODE_SUCCESS;
+}",none
+CWE-404,"		
+CWE-404: Improper Resource Shutdown or Release",The product does not release or incorrectly releases a resource before it is made available for re-use.,"Example 5
+
+In this example, the program does not use matching functions such as malloc/free, new/delete, and new[]/delete[] to allocate/deallocate the resource.
+
+(bad code)
+Example Language: C++ 
+class A {
+void foo();
+};
+void A::foo(){
+int *ptr;
+ptr = (int*)malloc(sizeof(int));
+delete ptr;
+}",none
+CWE-404,"		
+CWE-404: Improper Resource Shutdown or Release",The product does not release or incorrectly releases a resource before it is made available for re-use.,"Example 6
+
+In this example, the program calls the delete[] function on non-heap memory.
+
+(bad code)
+Example Language: C++ 
+class A{
+void foo(bool);
+};
+void A::foo(bool heap) {
+int localArray[2] = {
+11,22
+};
+int *p = localArray;
+if (heap){
+p = new int[2];
+}
+delete[] p;
+}",none
+CWE-78,CWE-78: Improper Neutralization of Special Elements used in an OS Command ('OS Command Injection'),"The product constructs all or part of an OS command using externally-influenced input from an upstream component, but it does not neutralize or incorrectly neutralizes special elements that could modify the intended OS command when it is sent to a downstream component.","Example 2
+
+The following simple program accepts a filename as a command line argument and displays the contents of the file back to the user. The program is installed setuid root because it is intended for use as a learning tool to allow system administrators in-training to inspect privileged system files without giving them the ability to modify them or damage the system.
+
+(bad code)
+Example Language: C 
+int main(int argc, char** argv) {
+char cmd[CMD_MAX] = ""/usr/bin/cat "";
+strcat(cmd, argv[1]);
+system(cmd);
+}
+","Because the program runs with root privileges, the call to system() also executes with root privileges. If a user specifies a standard filename, the call works as expected. However, if an attacker passes a string of the form "";rm -rf /"", then the call to system() fails to execute cat due to a lack of arguments and then plows on to recursively delete the contents of the root partition.
+
+Note that if argv[1] is a very long argument, then this issue might also be subject to a buffer overflow (CWE-120)."
+CWE-369,CWE-369: Divide By Zero,The product divides a value by zero.,"Example 2
+
+The following C/C++ example contains a function that divides two numeric values without verifying that the input value used as the denominator is not zero. This will create an error for attempting to divide by zero, if this error is not caught by the error handling capabilities of the language, unexpected results can occur.
+
+(bad code)
+Example Language: C 
+double divide(double x, double y){
+return x/y;
+}
+","By validating the input value used as the denominator the following code will ensure that a divide by zero error will not cause unexpected results. If the method is called and a zero is passed as the second argument a DivideByZero error will be thrown and should be caught by the calling block with an output message indicating the error.
+
+(good code)
+ 
+const int DivideByZero = 10;
+double divide(double x, double y){
+if ( 0 == y ){
+throw DivideByZero;
+}
+return x/y;
+}
+...
+try{
+divide(10, 0);
+}
+catch( int i ){
+if(i==DivideByZero) {
+cerr<<""Divide by zero error"";
+}
+}"
+CWE-369,CWE-369: Divide By Zero,The product divides a value by zero.,"Example 3
+
+The following C# example contains a function that divides two numeric values without verifying that the input value used as the denominator is not zero. This will create an error for attempting to divide by zero, if this error is not caught by the error handling capabilities of the language, unexpected results can occur.
+
+(bad code)
+Example Language: C# 
+int Division(int x, int y){
+return (x / y);
+}
+","The method can be modified to raise, catch and handle the DivideByZeroException if the input value used as the denominator is zero.
+
+(good code)
+ 
+int SafeDivision(int x, int y){
+try{
+return (x / y);
+}
+catch (System.DivideByZeroException dbz){
+System.Console.WriteLine(""Division by zero attempted!"");
+return 0;
+}
+}"
+CWE-908,CWE-908: Use of Uninitialized Resource,The product uses or accesses a resource that has not been initialized.,"Example 3
+
+The following code intends to concatenate a string to a variable and print the string.
+
+(bad code)
+Example Language: C 
+char str[20];
+strcat(str, ""hello world"");
+printf(""%s"", str);
+","This might seem innocent enough, but str was not initialized, so it contains random memory. As a result, str[0] might not contain the null terminator, so the copy might start at an offset other than 0. The consequences can vary, depending on the underlying memory.
+
+If a null terminator is found before str[8], then some bytes of random garbage will be printed before the ""hello world"" string. The memory might contain sensitive information from previous uses, such as a password (which might occur as a result of CWE-14 or CWE-244). In this example, it might not be a big deal, but consider what could happen if large amounts of memory are printed out before the null terminator is found.
+
+If a null terminator isn't found before str[8], then a buffer overflow could occur, since strcat will first look for the null terminator, then copy 12 bytes starting with that location. Alternately, a buffer over-read might occur (CWE-126) if a null terminator isn't found before the end of the memory segment is reached, leading to a segmentation fault and crash."
+CWE-908,CWE-908: Use of Uninitialized Resource,The product uses or accesses a resource that has not been initialized.,"Example 4
+
+This example will leave test_string in an unknown condition when i is the same value as err_val, because test_string is not initialized (CWE-456). Depending on where this code segment appears (e.g. within a function body), test_string might be random if it is stored on the heap or stack. If the variable is declared in static memory, it might be zero or NULL. Compiler optimization might contribute to the unpredictability of this address.
+
+(bad code)
+Example Language: C 
+char *test_string;
+if (i != err_val)
+{
+test_string = ""Hello World!"";
+}
+printf(""%s"", test_string);
+","When the printf() is reached, test_string might be an unexpected address, so the printf might print junk strings (CWE-457).
+
+To fix this code, there are a couple approaches to making sure that test_string has been properly set once it reaches the printf().
+
+One solution would be to set test_string to an acceptable default before the conditional:
+
+(good code)
+Example Language: C 
+char *test_string = ""Done at the beginning"";
+if (i != err_val)
+{
+test_string = ""Hello World!"";
+}
+printf(""%s"", test_string);"
+CWE-134,"		
+CWE-134: Use of Externally-Controlled Format String","The product uses a function that accepts a format string as an argument, but the format string originates from an external source.","Example 1
+
+The following program prints a string provided as an argument.
+
+(bad code)
+Example Language: C 
+#include <stdio.h>
+
+void printWrapper(char *string) {
+
+printf(string);
+}
+
+int main(int argc, char **argv) {
+
+char buf[5012];
+memcpy(buf, argv[1], 5012);
+printWrapper(argv[1]);
+return (0);
+}
+","The example is exploitable, because of the call to printf() in the printWrapper() function. Note: The stack buffer was added to make exploitation more simple."
+CWE-134,"		
+CWE-134: Use of Externally-Controlled Format String","The product uses a function that accepts a format string as an argument, but the format string originates from an external source.","Example 2
+
+The following code copies a command line argument into a buffer using snprintf().
+
+(bad code)
+Example Language: C 
+int main(int argc, char **argv){
+char buf[128];
+...
+snprintf(buf,128,argv[1]);
+}
+","This code allows an attacker to view the contents of the stack and write to the stack using a command line argument containing a sequence of formatting directives. The attacker can read from the stack by providing more formatting directives, such as %x, than the function takes as arguments to be formatted. (In this example, the function takes no arguments to be formatted.) By using the %n formatting directive, the attacker can write to the stack, causing snprintf() to write the number of bytes output thus far to the specified argument (rather than reading a value from the argument, which is the intended behavior). A sophisticated version of this attack will use four staggered writes to completely control the value of a pointer on the stack."
+CWE-134,"		
+CWE-134: Use of Externally-Controlled Format String","The product uses a function that accepts a format string as an argument, but the format string originates from an external source.","Example 3
+
+Certain implementations make more advanced attacks even easier by providing format directives that control the location in memory to read from or write to. An example of these directives is shown in the following code, written for glibc:
+
+(bad code)
+Example Language: C 
+printf(""%d %d %1$d %1$d\n"", 5, 9);
+","This code produces the following output: 5 9 5 5 It is also possible to use half-writes (%hn) to accurately control arbitrary DWORDS in memory, which greatly reduces the complexity needed to execute an attack that would otherwise require four staggered writes, such as the one mentioned in the first example."
+CWE-77,"		
+CWE-77: Improper Neutralization of Special Elements used in a Command ('Command Injection')","The product constructs all or part of a command using externally-influenced input from an upstream component, but it does not neutralize or incorrectly neutralizes special elements that could modify the intended command when it is sent to a downstream component.","Example 1
+
+The following simple program accepts a filename as a command line argument and displays the contents of the file back to the user. The program is installed setuid root because it is intended for use as a learning tool to allow system administrators in-training to inspect privileged system files without giving them the ability to modify them or damage the system.
+
+(bad code)
+Example Language: C 
+int main(int argc, char** argv) {
+char cmd[CMD_MAX] = ""/usr/bin/cat "";
+strcat(cmd, argv[1]);
+system(cmd);
+}
+","Because the program runs with root privileges, the call to system() also executes with root privileges. If a user specifies a standard filename, the call works as expected. However, if an attacker passes a string of the form "";rm -rf /"", then the call to system() fails to execute cat due to a lack of arguments and then plows on to recursively delete the contents of the root partition.
+
+Note that if argv[1] is a very long argument, then this issue might also be subject to a buffer overflow (CWE-120)."
+CWE-77,"		
+CWE-77: Improper Neutralization of Special Elements used in a Command ('Command Injection')","The product constructs all or part of a command using externally-influenced input from an upstream component, but it does not neutralize or incorrectly neutralizes special elements that could modify the intended command when it is sent to a downstream component.","Example 4
+
+The following code is a wrapper around the UNIX command cat which prints the contents of a file to standard out. It is also injectable:
+
+(bad code)
+Example Language: C 
+#include <stdio.h>
+#include <unistd.h>
+
+int main(int argc, char **argv) {
+
+char cat[] = ""cat "";
+char *command;
+size_t commandLength;
+
+commandLength = strlen(cat) + strlen(argv[1]) + 1;
+command = (char *) malloc(commandLength);
+strncpy(command, cat, commandLength);
+strncat(command, argv[1], (commandLength - strlen(cat)) );
+
+system(command);
+return (0);
+}
+Used normally, the output is simply the contents of the file requested:
+
+(informative)
+ 
+$ ./catWrapper Story.txt
+","When last we left our heroes...
+However, if we add a semicolon and another command to the end of this line, the command is executed by catWrapper with no complaint:
+
+(attack code)
+ 
+$ ./catWrapper Story.txt; ls
+When last we left our heroes...
+Story.txt
+SensitiveFile.txt
+PrivateData.db
+a.out*
+If catWrapper had been set to have a higher privilege level than the standard user, arbitrary commands could be executed with that higher privilege."
+CWE-252,CWE-252: Unchecked Return Value,"The product does not check the return value from a method or function, which can prevent it from detecting unexpected states and conditions.","Example 1
+
+Consider the following code segment:
+
+(bad code)
+Example Language: C 
+char buf[10], cp_buf[10];
+fgets(buf, 10, stdin);
+strcpy(cp_buf, buf);
+","The programmer expects that when fgets() returns, buf will contain a null-terminated string of length 9 or less. But if an I/O error occurs, fgets() will not null-terminate buf. Furthermore, if the end of the file is reached before any characters are read, fgets() returns without writing anything to buf. In both of these situations, fgets() signals that something unusual has happened by returning NULL, but in this code, the warning will not be noticed. The lack of a null terminator in buf can result in a buffer overflow in the subsequent call to strcpy()."
+CWE-252,CWE-252: Unchecked Return Value,"The product does not check the return value from a method or function, which can prevent it from detecting unexpected states and conditions.","Example 2
+
+In the following example, it is possible to request that memcpy move a much larger segment of memory than assumed:
+
+(bad code)
+Example Language: C 
+int returnChunkSize(void *) {
+
+/* if chunk info is valid, return the size of usable memory,
+
+* else, return -1 to indicate an error
+
+*/
+...
+}
+int main() {
+...
+memcpy(destBuf, srcBuf, (returnChunkSize(destBuf)-1));
+...
+}
+","If returnChunkSize() happens to encounter an error it will return -1. Notice that the return value is not checked before the memcpy operation (CWE-252), so -1 can be passed as the size argument to memcpy() (CWE-805). Because memcpy() assumes that the value is unsigned, it will be interpreted as MAXINT-1 (CWE-195), and therefore will copy far more memory than is likely available to the destination buffer (CWE-787, CWE-788)."
+CWE-252,CWE-252: Unchecked Return Value,"The product does not check the return value from a method or function, which can prevent it from detecting unexpected states and conditions.","Example 3
+
+The following code does not check to see if memory allocation succeeded before attempting to use the pointer returned by malloc().
+
+(bad code)
+Example Language: C 
+buf = (char*) malloc(req_size);
+strncpy(buf, xfer, req_size);
+","The traditional defense of this coding error is: ""If my program runs out of memory, it will fail. It doesn't matter whether I handle the error or allow the program to die with a segmentation fault when it tries to dereference the null pointer."" This argument ignores three important considerations:
+
+Depending upon the type and size of the application, it may be possible to free memory that is being used elsewhere so that execution can continue.
+It is impossible for the program to perform a graceful exit if required. If the program is performing an atomic operation, it can leave the system in an inconsistent state.
+The programmer has lost the opportunity to record diagnostic information. Did the call to malloc() fail because req_size was too large or because there were too many requests being handled at the same time? Or was it caused by a memory leak that has built up over time? Without handling the error, there is no way to know."
+CWE-252,CWE-252: Unchecked Return Value,"The product does not check the return value from a method or function, which can prevent it from detecting unexpected states and conditions.","Example 9
+
+This example takes an IP address from a user, verifies that it is well formed and then looks up the hostname and copies it into a buffer.
+
+(bad code)
+Example Language: C 
+void host_lookup(char *user_supplied_addr){
+struct hostent *hp;
+in_addr_t *addr;
+char hostname[64];
+in_addr_t inet_addr(const char *cp);
+
+/*routine that ensures user_supplied_addr is in the right format for conversion */
+
+validate_addr_form(user_supplied_addr);
+addr = inet_addr(user_supplied_addr);
+hp = gethostbyaddr( addr, sizeof(struct in_addr), AF_INET);
+strcpy(hostname, hp->h_name);
+}
+","If an attacker provides an address that appears to be well-formed, but the address does not resolve to a hostname, then the call to gethostbyaddr() will return NULL. Since the code does not check the return value from gethostbyaddr (CWE-252), a NULL pointer dereference (CWE-476) would then occur in the call to strcpy().
+
+Note that this code is also vulnerable to a buffer overflow (CWE-119)."
+CWE-252,CWE-252: Unchecked Return Value,"The product does not check the return value from a method or function, which can prevent it from detecting unexpected states and conditions.","Example 10
+
+The following function attempts to acquire a lock in order to perform operations on a shared resource.
+
+(bad code)
+Example Language: C 
+void f(pthread_mutex_t *mutex) {
+pthread_mutex_lock(mutex);
+
+/* access shared resource */
+
+
+pthread_mutex_unlock(mutex);
+}
+","However, the code does not check the value returned by pthread_mutex_lock() for errors. If pthread_mutex_lock() cannot acquire the mutex for any reason, the function may introduce a race condition into the program and result in undefined behavior.
+
+In order to avoid data races, correctly written programs must check the result of thread synchronization functions and appropriately handle all errors, either by attempting to recover from them or reporting them to higher levels.
+
+(good code)
+Example Language: C 
+int f(pthread_mutex_t *mutex) {
+int result;
+
+result = pthread_mutex_lock(mutex);
+if (0 != result)
+return result;
+
+
+/* access shared resource */
+
+
+return pthread_mutex_unlock(mutex);
+}"
+CWE-763,CWE-763: Release of Invalid Pointer or Reference,"The product attempts to return a memory resource to the system, but it calls the wrong release function or calls the appropriate release function incorrectly.","Example 1
+
+This code attempts to tokenize a string and place it into an array using the strsep function, which inserts a \0 byte in place of whitespace or a tab character. After finishing the loop, each string in the AP array points to a location within the input string.
+
+(bad code)
+Example Language: C 
+char **ap, *argv[10], *inputstring;
+for (ap = argv; (*ap = strsep(&inputstring, "" \t"")) != NULL;)
+if (**ap != '\0')
+if (++ap >= &argv[10])
+break;
+
+/.../
+free(ap[4]);
+","Since strsep is not allocating any new memory, freeing an element in the middle of the array is equivalent to free a pointer in the middle of inputstring."
+CWE-763,CWE-763: Release of Invalid Pointer or Reference,"The product attempts to return a memory resource to the system, but it calls the wrong release function or calls the appropriate release function incorrectly.","Example 2
+
+This example allocates a BarObj object using the new operator in C++, however, the programmer then deallocates the object using free(), which may lead to unexpected behavior.
+
+(bad code)
+Example Language: C++ 
+void foo(){
+BarObj *ptr = new BarObj()
+/* do some work with ptr here */
+
+...
+
+free(ptr);
+}
+","Instead, the programmer should have either created the object with one of the malloc family functions, or else deleted the object with the delete operator.
+
+(good code)
+Example Language: C++ 
+void foo(){
+BarObj *ptr = new BarObj()
+/* do some work with ptr here */
+
+...
+
+delete ptr;
+}"
+CWE-763,CWE-763: Release of Invalid Pointer or Reference,"The product attempts to return a memory resource to the system, but it calls the wrong release function or calls the appropriate release function incorrectly.","Example 3
+
+In this example, the programmer dynamically allocates a buffer to hold a string and then searches for a specific character. After completing the search, the programmer attempts to release the allocated memory and return SUCCESS or FAILURE to the caller. Note: for simplification, this example uses a hard-coded ""Search Me!"" string and a constant string length of 20.
+
+(bad code)
+Example Language: C 
+#define SUCCESS (1)
+#define FAILURE (0)
+
+int contains_char(char c){
+char *str;
+str = (char*)malloc(20*sizeof(char));
+strcpy(str, ""Search Me!"");
+while( *str != NULL){
+if( *str == c ){
+
+/* matched char, free string and return success */
+free(str);
+return SUCCESS;
+}
+/* didn't match yet, increment pointer and try next char */
+
+str = str + 1;
+}
+/* we did not match the char in the string, free mem and return failure */
+
+free(str);
+return FAILURE;
+}
+","However, if the character is not at the beginning of the string, or if it is not in the string at all, then the pointer will not be at the start of the buffer when the programmer frees it.
+
+Instead of freeing the pointer in the middle of the buffer, the programmer can use an indexing pointer to step through the memory or abstract the memory calculations by using array indexing.
+
+(good code)
+Example Language: C 
+#define SUCCESS (1)
+#define FAILURE (0)
+
+int cointains_char(char c){
+char *str;
+int i = 0;
+str = (char*)malloc(20*sizeof(char));
+strcpy(str, ""Search Me!"");
+while( i < strlen(str) ){
+if( str[i] == c ){
+
+/* matched char, free string and return success */
+free(str);
+return SUCCESS;
+}
+/* didn't match yet, increment pointer and try next char */
+
+i = i + 1;
+}
+/* we did not match the char in the string, free mem and return failure */
+
+free(str);
+return FAILURE;
+}"
+CWE-763,CWE-763: Release of Invalid Pointer or Reference,"The product attempts to return a memory resource to the system, but it calls the wrong release function or calls the appropriate release function incorrectly.","Example 4
+
+Consider the following code in the context of a parsing application to extract commands out of user data. The intent is to parse each command and add it to a queue of commands to be executed, discarding each malformed entry.
+
+(bad code)
+Example Language: C 
+
+//hardcode input length for simplicity
+char* input = (char*) malloc(40*sizeof(char));
+char *tok;
+char* sep = "" \t"";
+
+get_user_input( input );
+
+/* The following loop will parse and process each token in the input string */
+
+tok = strtok( input, sep);
+while( NULL != tok ){
+if( isMalformed( tok ) ){
+
+/* ignore and discard bad data */
+free( tok );
+}
+else{
+add_to_command_queue( tok );
+}
+tok = strtok( NULL, sep));
+}
+","While the above code attempts to free memory associated with bad commands, since the memory was all allocated in one chunk, it must all be freed together.
+
+One way to fix this problem would be to copy the commands into a new memory location before placing them in the queue. Then, after all commands have been processed, the memory can safely be freed.
+
+(good code)
+Example Language: C 
+
+//hardcode input length for simplicity
+char* input = (char*) malloc(40*sizeof(char));
+char *tok, *command;
+char* sep = "" \t"";
+
+get_user_input( input );
+
+/* The following loop will parse and process each token in the input string */
+
+tok = strtok( input, sep);
+while( NULL != tok ){
+if( !isMalformed( command ) ){
+
+/* copy and enqueue good data */
+command = (char*) malloc( (strlen(tok) + 1) * sizeof(char) );
+strcpy( command, tok );
+add_to_command_queue( command );
+}
+tok = strtok( NULL, sep));
+}
+
+free( input )"
+CWE-732,CWE-732: Incorrect Permission Assignment for Critical Resource,The product specifies permissions for a security-critical resource in a way that allows that resource to be read or modified by unintended actors.,"Example 1
+
+The following code sets the umask of the process to 0 before creating a file and writing ""Hello world"" into the file.
+
+(bad code)
+Example Language: C 
+#define OUTFILE ""hello.out""
+
+umask(0);
+FILE *out;
+/* Ignore link following (CWE-59) for brevity */
+
+out = fopen(OUTFILE, ""w"");
+if (out) {
+fprintf(out, ""hello world!\n"");
+fclose(out);
+}
+","After running this program on a UNIX system, running the ""ls -l"" command might return the following output:
+
+(result)
+ 
+-rw-rw-rw- 1 username 13 Nov 24 17:58 hello.out
+The ""rw-rw-rw-"" string indicates that the owner, group, and world (all users) can read the file and write to it."
+CWE-665,CWE-665: Improper Initialization,"The product does not initialize or incorrectly initializes a resource, which might leave the resource in an unexpected state when it is accessed or used.","Example 3
+
+The following code intends to concatenate a string to a variable and print the string.
+
+(bad code)
+Example Language: C 
+char str[20];
+strcat(str, ""hello world"");
+printf(""%s"", str);
+","This might seem innocent enough, but str was not initialized, so it contains random memory. As a result, str[0] might not contain the null terminator, so the copy might start at an offset other than 0. The consequences can vary, depending on the underlying memory.
+
+If a null terminator is found before str[8], then some bytes of random garbage will be printed before the ""hello world"" string. The memory might contain sensitive information from previous uses, such as a password (which might occur as a result of CWE-14 or CWE-244). In this example, it might not be a big deal, but consider what could happen if large amounts of memory are printed out before the null terminator is found.
+
+If a null terminator isn't found before str[8], then a buffer overflow could occur, since strcat will first look for the null terminator, then copy 12 bytes starting with that location. Alternately, a buffer over-read might occur (CWE-126) if a null terminator isn't found before the end of the memory segment is reached, leading to a segmentation fault and crash."
+CWE-354,"		
+CWE-354: Improper Validation of Integrity Check Value","The product does not validate or incorrectly validates the integrity check values or ""checksums"" of a message. This may prevent it from detecting if the data has been modified or corrupted in transmission.","Example 1
+
+The following example demonstrates the weakness.
+
+(bad code)
+Example Language: C 
+sd = socket(AF_INET, SOCK_DGRAM, 0); serv.sin_family = AF_INET;
+serv.sin_addr.s_addr = htonl(INADDR_ANY);
+servr.sin_port = htons(1008);
+bind(sd, (struct sockaddr *) & serv, sizeof(serv));
+while (1) {
+
+memset(msg, 0x0, MAX_MSG);
+clilen = sizeof(cli);
+if (inet_ntoa(cli.sin_addr)==...) n = recvfrom(sd, msg, MAX_MSG, 0, (struct sockaddr *) & cli, &clilen);
+}
+",
+CWE-667,"		
+CWE-667: Improper Locking","The product does not properly acquire or release a lock on a resource, leading to unexpected resource state changes and behaviors.","Example 3
+
+The following function attempts to acquire a lock in order to perform operations on a shared resource.
+
+(bad code)
+Example Language: C 
+void f(pthread_mutex_t *mutex) {
+pthread_mutex_lock(mutex);
+
+/* access shared resource */
+
+
+pthread_mutex_unlock(mutex);
+}
+","However, the code does not check the value returned by pthread_mutex_lock() for errors. If pthread_mutex_lock() cannot acquire the mutex for any reason, the function may introduce a race condition into the program and result in undefined behavior.
+
+In order to avoid data races, correctly written programs must check the result of thread synchronization functions and appropriately handle all errors, either by attempting to recover from them or reporting them to higher levels.
+
+(good code)
+Example Language: C 
+int f(pthread_mutex_t *mutex) {
+int result;
+
+result = pthread_mutex_lock(mutex);
+if (0 != result)
+return result;
+
+
+/* access shared resource */
+
+
+return pthread_mutex_unlock(mutex);
+}"
+CWE-129,"		
+CWE-129: Improper Validation of Array Index","The product uses untrusted input when calculating or using an array index, but the product does not validate or incorrectly validates the index to ensure the index references a valid position within the array.","Example 3
+
+In the following code, the method retrieves a value from an array at a specific array index location that is given as an input parameter to the method
+
+(bad code)
+Example Language: C 
+int getValueFromArray(int *array, int len, int index) {
+
+int value;
+
+// check that the array index is less than the maximum
+
+// length of the array
+if (index < len) {
+// get the value at the specified index of the array
+value = array[index];
+}
+// if array index is invalid then output error message
+
+// and return value indicating error
+else {
+printf(""Value is: %d\n"", array[index]);
+value = -1;
+}
+
+return value;
+}
+","However, this method only verifies that the given array index is less than the maximum length of the array but does not check for the minimum value (CWE-839). This will allow a negative value to be accepted as the input array index, which will result in a out of bounds read (CWE-125) and may allow access to sensitive memory. The input array index should be checked to verify that is within the maximum and minimum range required for the array (CWE-129). In this example the if statement should be modified to include a minimum range check, as shown below.
+
+(good code)
+Example Language: C 
+
+...
+
+// check that the array index is within the correct
+
+// range of values for the array
+if (index >= 0 && index < len) {
+
+..."
+CWE-129,"		
+CWE-129: Improper Validation of Array Index","The product uses untrusted input when calculating or using an array index, but the product does not validate or incorrectly validates the index to ensure the index references a valid position within the array.","Example 4
+
+The following example retrieves the sizes of messages for a pop3 mail server. The message sizes are retrieved from a socket that returns in a buffer the message number and the message size, the message number (num) and size (size) are extracted from the buffer and the message size is placed into an array using the message number for the array index.
+
+(bad code)
+Example Language: C 
+
+/* capture the sizes of all messages */
+int getsizes(int sock, int count, int *sizes) {
+...
+char buf[BUFFER_SIZE];
+int ok;
+int num, size;
+
+// read values from socket and added to sizes array
+while ((ok = gen_recv(sock, buf, sizeof(buf))) == 0)
+{
+// continue read from socket until buf only contains '.'
+if (DOTLINE(buf))
+break;
+else if (sscanf(buf, ""%d %d"", &num, &size) == 2)
+sizes[num - 1] = size;
+}
+...
+}
+","In this example the message number retrieved from the buffer could be a value that is outside the allowable range of indices for the array and could possibly be a negative number. Without proper validation of the value to be used for the array index an array overflow could occur and could potentially lead to unauthorized access to memory addresses and system crashes. The value of the array index should be validated to ensure that it is within the allowable range of indices for the array as in the following code.
+
+(good code)
+Example Language: C 
+
+/* capture the sizes of all messages */
+int getsizes(int sock, int count, int *sizes) {
+...
+char buf[BUFFER_SIZE];
+int ok;
+int num, size;
+
+// read values from socket and added to sizes array
+while ((ok = gen_recv(sock, buf, sizeof(buf))) == 0)
+{
+
+// continue read from socket until buf only contains '.'
+if (DOTLINE(buf))
+break;
+
+else if (sscanf(buf, ""%d %d"", &num, &size) == 2) {
+if (num > 0 && num <= (unsigned)count)
+sizes[num - 1] = size;
+
+else
+
+/* warn about possible attempt to induce buffer overflow */
+report(stderr, ""Warning: ignoring bogus data for message sizes returned by server.\n"");
+}
+}
+...
+}"
+CWE-129,"		
+CWE-129: Improper Validation of Array Index","The product uses untrusted input when calculating or using an array index, but the product does not validate or incorrectly validates the index to ensure the index references a valid position within the array.","Example 6
+
+The following example asks a user for an offset into an array to select an item.
+
+(bad code)
+Example Language: C 
+
+int main (int argc, char **argv) {
+char *items[] = {""boat"", ""car"", ""truck"", ""train""};
+int index = GetUntrustedOffset();
+printf(""You selected %s\n"", items[index-1]);
+}
+","The programmer allows the user to specify which element in the list to select, however an attacker can provide an out-of-bounds offset, resulting in a buffer over-read (CWE-126)."
+CWE-89,CWE-89: Improper Neutralization of Special Elements used in an SQL Command ('SQL Injection'),"The product constructs all or part of an SQL command using externally-influenced input from an upstream component, but it does not neutralize or incorrectly neutralizes special elements that could modify the intended SQL command when it is sent to a downstream component.","Example 2
+
+The following code dynamically constructs and executes a SQL query that searches for items matching a specified name. The query restricts the items displayed to those where owner matches the user name of the currently-authenticated user.
+
+(bad code)
+Example Language: C# 
+...
+string userName = ctx.getAuthenticatedUserName();
+string query = ""SELECT * FROM items WHERE owner = '"" + userName + ""' AND itemname = '"" + ItemName.Text + ""'"";
+sda = new SqlDataAdapter(query, conn);
+DataTable dt = new DataTable();
+sda.Fill(dt);
+...
+","The query that this code intends to execute follows:
+
+(informative)
+ 
+SELECT * FROM items WHERE owner = <userName> AND itemname = <itemName>;
+However, because the query is constructed dynamically by concatenating a constant base query string and a user input string, the query only behaves correctly if itemName does not contain a single-quote character. If an attacker with the user name wiley enters the string:
+
+(attack code)
+ 
+name' OR 'a'='a
+for itemName, then the query becomes the following:
+
+(attack code)
+ 
+SELECT * FROM items WHERE owner = 'wiley' AND itemname = 'name' OR 'a'='a';
+The addition of the:
+
+(attack code)
+ 
+OR 'a'='a
+condition causes the WHERE clause to always evaluate to true, so the query becomes logically equivalent to the much simpler query:
+
+(attack code)
+ 
+SELECT * FROM items;
+This simplification of the query allows the attacker to bypass the requirement that the query only return items owned by the authenticated user; the query now returns all entries stored in the items table, regardless of their specified owner."
+CWE-770,CWE-770: Allocation of Resources Without Limits or Throttling,"The product allocates a reusable resource or group of resources on behalf of an actor without imposing any restrictions on the size or number of resources that can be allocated, in violation of the intended security policy for that actor.","Example 1
+
+This code allocates a socket and forks each time it receives a new connection.
+
+(bad code)
+Example Language: C 
+sock=socket(AF_INET, SOCK_STREAM, 0);
+while (1) {
+newsock=accept(sock, ...);
+printf(""A connection has been accepted\n"");
+pid = fork();
+}
+","The program does not track how many connections have been made, and it does not limit the number of connections. Because forking is a relatively expensive operation, an attacker would be able to cause the system to run out of CPU, processes, or memory by making a large number of connections. Alternatively, an attacker could consume all available connections, preventing others from accessing the system remotely."
+CWE-770,CWE-770: Allocation of Resources Without Limits or Throttling,"The product allocates a reusable resource or group of resources on behalf of an actor without imposing any restrictions on the size or number of resources that can be allocated, in violation of the intended security policy for that actor.","Example 2
+
+In the following example a server socket connection is used to accept a request to store data on the local file system using a specified filename. The method openSocketConnection establishes a server socket to accept requests from a client. When a client establishes a connection to this service the getNextMessage method is first used to retrieve from the socket the name of the file to store the data, the openFileToWrite method will validate the filename and open a file to write to on the local file system. The getNextMessage is then used within a while loop to continuously read data from the socket and output the data to the file until there is no longer any data from the socket.
+
+(bad code)
+Example Language: C 
+int writeDataFromSocketToFile(char *host, int port)
+{
+
+char filename[FILENAME_SIZE];
+char buffer[BUFFER_SIZE];
+int socket = openSocketConnection(host, port);
+
+if (socket < 0) {
+printf(""Unable to open socket connection"");
+return(FAIL);
+}
+if (getNextMessage(socket, filename, FILENAME_SIZE) > 0) {
+if (openFileToWrite(filename) > 0) {
+while (getNextMessage(socket, buffer, BUFFER_SIZE) > 0){
+if (!(writeToFile(buffer) > 0))
+break;
+}
+}
+closeFile();
+}
+closeSocket(socket);
+}
+",This example creates a situation where data can be dumped to a file on the local file system without any limits on the size of the file. This could potentially exhaust file or disk resources and/or limit other clients' ability to access the service.
+CWE-770,CWE-770: Allocation of Resources Without Limits or Throttling,"The product allocates a reusable resource or group of resources on behalf of an actor without imposing any restrictions on the size or number of resources that can be allocated, in violation of the intended security policy for that actor.","Example 3
+
+In the following example, the processMessage method receives a two dimensional character array containing the message to be processed. The two-dimensional character array contains the length of the message in the first character array and the message body in the second character array. The getMessageLength method retrieves the integer value of the length from the first character array. After validating that the message length is greater than zero, the body character array pointer points to the start of the second character array of the two-dimensional character array and memory is allocated for the new body character array.
+
+(bad code)
+Example Language: C 
+
+/* process message accepts a two-dimensional character array of the form [length][body] containing the message to be processed */
+int processMessage(char **message)
+{
+char *body;
+
+int length = getMessageLength(message[0]);
+
+if (length > 0) {
+body = &message[1][0];
+processMessageBody(body);
+return(SUCCESS);
+}
+else {
+printf(""Unable to process message; invalid message length"");
+return(FAIL);
+}
+}
+","This example creates a situation where the length of the body character array can be very large and will consume excessive memory, exhausting system resources. This can be avoided by restricting the length of the second character array with a maximum length check
+
+Also, consider changing the type from 'int' to 'unsigned int', so that you are always guaranteed that the number is positive. This might not be possible if the protocol specifically requires allowing negative values, or if you cannot control the return value from getMessageLength(), but it could simplify the check to ensure the input is positive, and eliminate other errors such as signed-to-unsigned conversion errors (CWE-195) that may occur elsewhere in the code.
+
+(good code)
+Example Language: C 
+unsigned int length = getMessageLength(message[0]);
+if ((length > 0) && (length < MAX_LENGTH)) {...}"
+CWE-770,CWE-770: Allocation of Resources Without Limits or Throttling,"The product allocates a reusable resource or group of resources on behalf of an actor without imposing any restrictions on the size or number of resources that can be allocated, in violation of the intended security policy for that actor.","Example 6
+
+
+(bad code)
+Example Language: C 
+bar connection() {
+foo = malloc(1024);
+return foo;
+}
+
+endConnection(bar foo) {
+free(foo);
+}
+
+int main() {
+while(1) {
+foo=connection();
+}
+
+endConnection(foo)
+}","Here the problem is that every time a connection is made, more memory is allocated. So if one just opened up more and more connections, eventually the machine would run out of memory."
+CWE-191,CWE-191: Integer Underflow (Wrap or Wraparound),"The product subtracts one value from another, such that the result is less than the minimum allowable integer value, which produces a value that is not equal to the correct result.","Example 1
+
+The following example subtracts from a 32 bit signed integer.
+
+(bad code)
+Example Language: C 
+#include <stdio.h>
+#include <stdbool.h>
+main (void)
+{
+int i;
+i = -2147483648;
+i = i - 1;
+return 0;
+}
+","The example has an integer underflow. The value of i is already at the lowest negative value possible, so after subtracting 1, the new value of i is 2147483647."
+CWE-191,CWE-191: Integer Underflow (Wrap or Wraparound),"The product subtracts one value from another, such that the result is less than the minimum allowable integer value, which produces a value that is not equal to the correct result.","Example 2
+
+This code performs a stack allocation based on a length calculation.
+
+(bad code)
+Example Language: C 
+int a = 5, b = 6;
+size_t len = a - b;
+char buf[len]; // Just blows up the stack
+}
+","Since a and b are declared as signed ints, the ""a - b"" subtraction gives a negative result (-1). However, since len is declared to be unsigned, len is cast to an extremely large positive number (on 32-bit systems - 4294967295). As a result, the buffer buf[len] declaration uses an extremely large size to allocate on the stack, very likely more than the entire computer's memory space.
+
+Miscalculations usually will not be so obvious. The calculation will either be complicated or the result of an attacker's input to attain the negative value."
+CWE-754,CWE-754: Improper Check for Unusual or Exceptional Conditions,The product does not check or incorrectly checks for unusual or exceptional conditions that are not expected to occur frequently during day to day operation of the product.,"Example 1
+
+Consider the following code segment:
+
+(bad code)
+Example Language: C 
+char buf[10], cp_buf[10];
+fgets(buf, 10, stdin);
+strcpy(cp_buf, buf);
+","The programmer expects that when fgets() returns, buf will contain a null-terminated string of length 9 or less. But if an I/O error occurs, fgets() will not null-terminate buf. Furthermore, if the end of the file is reached before any characters are read, fgets() returns without writing anything to buf. In both of these situations, fgets() signals that something unusual has happened by returning NULL, but in this code, the warning will not be noticed. The lack of a null terminator in buf can result in a buffer overflow in the subsequent call to strcpy()."
+CWE-754,CWE-754: Improper Check for Unusual or Exceptional Conditions,The product does not check or incorrectly checks for unusual or exceptional conditions that are not expected to occur frequently during day to day operation of the product.,"Example 2
+
+The following code does not check to see if memory allocation succeeded before attempting to use the pointer returned by malloc().
+
+(bad code)
+Example Language: C 
+buf = (char*) malloc(req_size);
+strncpy(buf, xfer, req_size);
+","The traditional defense of this coding error is: ""If my program runs out of memory, it will fail. It doesn't matter whether I handle the error or simply allow the program to die with a segmentation fault when it tries to dereference the null pointer."" This argument ignores three important considerations:
+
+Depending upon the type and size of the application, it may be possible to free memory that is being used elsewhere so that execution can continue.
+It is impossible for the program to perform a graceful exit if required. If the program is performing an atomic operation, it can leave the system in an inconsistent state.
+The programmer has lost the opportunity to record diagnostic information. Did the call to malloc() fail because req_size was too large or because there were too many requests being handled at the same time? Or was it caused by a memory leak that has built up over time? Without handling the error, there is no way to know."
+CWE-754,CWE-754: Improper Check for Unusual or Exceptional Conditions,The product does not check or incorrectly checks for unusual or exceptional conditions that are not expected to occur frequently during day to day operation of the product.,"Example 7
+
+This example takes an IP address from a user, verifies that it is well formed and then looks up the hostname and copies it into a buffer.
+
+(bad code)
+Example Language: C 
+void host_lookup(char *user_supplied_addr){
+struct hostent *hp;
+in_addr_t *addr;
+char hostname[64];
+in_addr_t inet_addr(const char *cp);
+
+/*routine that ensures user_supplied_addr is in the right format for conversion */
+
+validate_addr_form(user_supplied_addr);
+addr = inet_addr(user_supplied_addr);
+hp = gethostbyaddr( addr, sizeof(struct in_addr), AF_INET);
+strcpy(hostname, hp->h_name);
+}
+","If an attacker provides an address that appears to be well-formed, but the address does not resolve to a hostname, then the call to gethostbyaddr() will return NULL. Since the code does not check the return value from gethostbyaddr (CWE-252), a NULL pointer dereference (CWE-476) would then occur in the call to strcpy().
+
+Note that this code is also vulnerable to a buffer overflow (CWE-119)."
+CWE-754,CWE-754: Improper Check for Unusual or Exceptional Conditions,The product does not check or incorrectly checks for unusual or exceptional conditions that are not expected to occur frequently during day to day operation of the product.,"Example 8
+
+In the following C/C++ example the method outputStringToFile opens a file in the local filesystem and outputs a string to the file. The input parameters output and filename contain the string to output to the file and the name of the file respectively.
+
+(bad code)
+Example Language: C++ 
+int outputStringToFile(char *output, char *filename) {
+
+openFileToWrite(filename);
+writeToFile(output);
+closeFile(filename);
+}
+","However, this code does not check the return values of the methods openFileToWrite, writeToFile, closeFile to verify that the file was properly opened and closed and that the string was successfully written to the file. The return values for these methods should be checked to determine if the method was successful and allow for detection of errors or unexpected conditions as in the following example.
+
+(good code)
+Example Language: C++ 
+int outputStringToFile(char *output, char *filename) {
+int isOutput = SUCCESS;
+
+int isOpen = openFileToWrite(filename);
+if (isOpen == FAIL) {
+printf(""Unable to open file %s"", filename);
+isOutput = FAIL;
+}
+else {
+int isWrite = writeToFile(output);
+if (isWrite == FAIL) {
+printf(""Unable to write to file %s"", filename);
+isOutput = FAIL;
+}
+
+int isClose = closeFile(filename);
+if (isClose == FAIL)
+isOutput = FAIL;
+}
+return isOutput;
+}"
+CWE-273,CWE-273: Improper Check for Dropped Privileges,The product attempts to drop privileges but does not check or incorrectly checks to see if the drop succeeded.,"Example 1
+
+This code attempts to take on the privileges of a user before creating a file, thus avoiding performing the action with unnecessarily high privileges:
+
+(bad code)
+Example Language: C++ 
+bool DoSecureStuff(HANDLE hPipe) {
+bool fDataWritten = false;
+ImpersonateNamedPipeClient(hPipe);
+HANDLE hFile = CreateFile(...);
+/../
+RevertToSelf()
+/../
+}
+","The call to ImpersonateNamedPipeClient may fail, but the return value is not checked. If the call fails, the code may execute with higher privileges than intended. In this case, an attacker could exploit this behavior to write a file to a location that the attacker does not have access to."
+CWE-426,"		
+CWE-426: Untrusted Search Path",The product searches for critical resources using an externally-supplied search path that can point to resources that are not under the product's direct control.,"Example 1
+
+This program is intended to execute a command that lists the contents of a restricted directory, then performs other actions. Assume that it runs with setuid privileges in order to bypass the permissions check by the operating system.
+
+(bad code)
+Example Language: C 
+#define DIR ""/restricted/directory""
+
+char cmd[500];
+sprintf(cmd, ""ls -l %480s"", DIR);
+/* Raise privileges to those needed for accessing DIR. */
+
+RaisePrivileges(...);
+system(cmd);
+DropPrivileges(...);
+...
+","This code may look harmless at first, since both the directory and the command are set to fixed values that the attacker can't control. The attacker can only see the contents for DIR, which is the intended program behavior. Finally, the programmer is also careful to limit the code that executes with raised privileges.
+
+However, because the program does not modify the PATH environment variable, the following attack would work:
+
+(attack code)
+ 
+The user sets the PATH to reference a directory under the attacker's control, such as ""/my/dir/"".
+The attacker creates a malicious program called ""ls"", and puts that program in /my/dir
+The user executes the program.
+When system() is executed, the shell consults the PATH to find the ls program
+The program finds the attacker's malicious program, ""/my/dir/ls"". It doesn't find ""/bin/ls"" because PATH does not contain ""/bin/"".
+The program executes the attacker's malicious program with the raised privileges."
+CWE-682,"		
+CWE-682: Incorrect Calculation",The product performs a calculation that generates incorrect or unintended results that are later used in security-critical decisions or resource management.,"Example 1
+
+The following image processing code allocates a table for images.
+
+(bad code)
+Example Language: C 
+img_t table_ptr; /*struct containing img data, 10kB each*/
+int num_imgs;
+...
+num_imgs = get_num_imgs();
+table_ptr = (img_t*)malloc(sizeof(img_t)*num_imgs);
+...
+","This code intends to allocate a table of size num_imgs, however as num_imgs grows large, the calculation determining the size of the list will eventually overflow (CWE-190). This will result in a very small list to be allocated instead. If the subsequent code operates on the list as if it were num_imgs long, it may result in many types of out-of-bounds problems (CWE-119)."
+CWE-682,"		
+CWE-682: Incorrect Calculation",The product performs a calculation that generates incorrect or unintended results that are later used in security-critical decisions or resource management.,"Example 3
+
+This example attempts to calculate the position of the second byte of a pointer.
+
+(bad code)
+Example Language: C 
+int *p = x;
+char * second_char = (char *)(p + 1);
+","In this example, second_char is intended to point to the second byte of p. But, adding 1 to p actually adds sizeof(int) to p, giving a result that is incorrect (3 bytes off on 32-bit platforms). If the resulting memory address is read, this could potentially be an information leak. If it is a write, it could be a security-critical write to unauthorized memory-- whether or not it is a buffer overflow. Note that the above code may also be wrong in other ways, particularly in a little endian environment."
+CWE-327,CWE-327: Use of a Broken or Risky Cryptographic Algorithm,The product uses a broken or risky cryptographic algorithm or protocol.,"Example 1
+
+
+
+(bad code)
+Example Language: C 
+EVP_des_ecb();",These code examples use the Data Encryption Standard (DES).
+CWE-681,CWE-681: Incorrect Conversion between Numeric Types,"When converting from one data type to another, such as long to integer, data can be omitted or translated in a way that produces unexpected values. If the resulting values are used in a sensitive context, then dangerous behaviors may occur.","Example 3
+
+In this example the variable amount can hold a negative value when it is returned. Because the function is declared to return an unsigned int, amount will be implicitly converted to unsigned.
+
+(bad code)
+Example Language: C 
+unsigned int readdata () {
+int amount = 0;
+...
+if (result == ERROR)
+amount = -1;
+...
+return amount;
+}
+","If the error condition in the code above is met, then the return value of readdata() will be 4,294,967,295 on a system that uses 32-bit integers."
+CWE-681,CWE-681: Incorrect Conversion between Numeric Types,"When converting from one data type to another, such as long to integer, data can be omitted or translated in a way that produces unexpected values. If the resulting values are used in a sensitive context, then dangerous behaviors may occur.","Example 4
+
+In this example, depending on the return value of accecssmainframe(), the variable amount can hold a negative value when it is returned. Because the function is declared to return an unsigned value, amount will be implicitly cast to an unsigned number.
+
+(bad code)
+Example Language: C 
+unsigned int readdata () {
+int amount = 0;
+...
+amount = accessmainframe();
+...
+return amount;
+}
+","If the return value of accessmainframe() is -1, then the return value of readdata() will be 4,294,967,295 on a system that uses 32-bit integers."
+CWE-193,"		
+CWE-193: Off-by-one Error","A product calculates or uses an incorrect maximum or minimum value that is 1 more, or 1 less, than the correct value.","Example 1
+
+The following code allocates memory for a maximum number of widgets. It then gets a user-specified number of widgets, making sure that the user does not request too many. It then initializes the elements of the array using InitializeWidget(). Because the number of widgets can vary for each request, the code inserts a NULL pointer to signify the location of the last widget.
+
+(bad code)
+Example Language: C 
+int i;
+unsigned int numWidgets;
+Widget **WidgetList;
+
+numWidgets = GetUntrustedSizeValue();
+if ((numWidgets == 0) || (numWidgets > MAX_NUM_WIDGETS)) {
+ExitError(""Incorrect number of widgets requested!"");
+}
+WidgetList = (Widget **)malloc(numWidgets * sizeof(Widget *));
+printf(""WidgetList ptr=%p\n"", WidgetList);
+for(i=0; i<numWidgets; i++) {
+WidgetList[i] = InitializeWidget();
+}
+WidgetList[numWidgets] = NULL;
+showWidgets(WidgetList);
+","However, this code contains an off-by-one calculation error (CWE-193). It allocates exactly enough space to contain the specified number of widgets, but it does not include the space for the NULL pointer. As a result, the allocated buffer is smaller than it is supposed to be (CWE-131). So if the user ever requests MAX_NUM_WIDGETS, there is an out-of-bounds write (CWE-787) when the NULL is assigned. Depending on the environment and compilation settings, this could cause memory corruption."
+CWE-193,"		
+CWE-193: Off-by-one Error","A product calculates or uses an incorrect maximum or minimum value that is 1 more, or 1 less, than the correct value.","Example 2
+
+In this example, the code does not account for the terminating null character, and it writes one byte beyond the end of the buffer.
+
+The first call to strncat() appends up to 20 characters plus a terminating null character to fullname[]. There is plenty of allocated space for this, and there is no weakness associated with this first call. However, the second call to strncat() potentially appends another 20 characters. The code does not account for the terminating null character that is automatically added by strncat(). This terminating null character would be written one byte beyond the end of the fullname[] buffer. Therefore an off-by-one error exists with the second strncat() call, as the third argument should be 19.
+
+(bad code)
+Example Language: C 
+char firstname[20];
+char lastname[20];
+char fullname[40];
+
+fullname[0] = '\0';
+
+strncat(fullname, firstname, 20);
+strncat(fullname, lastname, 20);
+","When using a function like strncat() one must leave a free byte at the end of the buffer for a terminating null character, thus avoiding the off-by-one weakness. Additionally, the last argument to strncat() is the number of characters to append, which must be less than the remaining space in the buffer. Be careful not to just use the total size of the buffer.
+
+(good code)
+Example Language: C 
+char firstname[20];
+char lastname[20];
+char fullname[40];
+
+fullname[0] = '\0';
+
+strncat(fullname, firstname, sizeof(fullname)-strlen(fullname)-1);
+strncat(fullname, lastname, sizeof(fullname)-strlen(fullname)-1);"
+CWE-193,"		
+CWE-193: Off-by-one Error","A product calculates or uses an incorrect maximum or minimum value that is 1 more, or 1 less, than the correct value.","Example 3
+
+The Off-by-one error can also be manifested when reading characters from a character array within a for loop that has an incorrect continuation condition.
+
+(bad code)
+Example Language: C 
+#define PATH_SIZE 60
+
+char filename[PATH_SIZE];
+
+for(i=0; i<=PATH_SIZE; i++) {
+char c = getc();
+if (c == 'EOF') {
+filename[i] = '\0';
+}
+
+filename[i] = getc();
+}
+","In this case, the correct continuation condition is shown below.
+
+(good code)
+Example Language: C 
+for(i=0; i<PATH_SIZE; i++) {
+…"
+CWE-193,"		
+CWE-193: Off-by-one Error","A product calculates or uses an incorrect maximum or minimum value that is 1 more, or 1 less, than the correct value.","Example 4
+
+As another example the Off-by-one error can occur when using the sprintf library function to copy a string variable to a formatted string variable and the original string variable comes from an untrusted source. As in the following example where a local function, setFilename is used to store the value of a filename to a database but first uses sprintf to format the filename. The setFilename function includes an input parameter with the name of the file that is used as the copy source in the sprintf function. The sprintf function will copy the file name to a char array of size 20 and specifies the format of the new variable as 16 characters followed by the file extension .dat.
+
+(bad code)
+Example Language: C 
+int setFilename(char *filename) {
+char name[20];
+sprintf(name, ""%16s.dat"", filename);
+int success = saveFormattedFilenameToDB(name);
+return success;
+}
+",However this will cause an Off-by-one error if the original filename is exactly 16 characters or larger because the format of 16 characters with the file extension is exactly 20 characters and does not take into account the required null terminator that will be placed at the end of the string.
+CWE-290,CWE-290: Authentication Bypass by Spoofing,This attack-focused weakness is caused by incorrectly implemented authentication schemes that are subject to spoofing attacks.,"Example 2
+
+
+
+(bad code)
+Example Language: C 
+sd = socket(AF_INET, SOCK_DGRAM, 0);
+serv.sin_family = AF_INET;
+serv.sin_addr.s_addr = htonl(INADDR_ANY);
+servr.sin_port = htons(1008);
+bind(sd, (struct sockaddr *) & serv, sizeof(serv));
+
+while (1) {
+memset(msg, 0x0, MAX_MSG);
+clilen = sizeof(cli);
+if (inet_ntoa(cli.sin_addr)==getTrustedAddress()) {
+n = recvfrom(sd, msg, MAX_MSG, 0, (struct sockaddr *) & cli, &clilen);
+}
+}",Both of these examples check if a request is from a trusted address before responding to the request.
+CWE-290,CWE-290: Authentication Bypass by Spoofing,This attack-focused weakness is caused by incorrectly implemented authentication schemes that are subject to spoofing attacks.,"Example 3
+
+
+
+(bad code)
+Example Language: C 
+struct hostent *hp;struct in_addr myaddr;
+char* tHost = ""trustme.example.com"";
+myaddr.s_addr=inet_addr(ip_addr_string);
+
+hp = gethostbyaddr((char *) &myaddr, sizeof(struct in_addr), AF_INET);
+if (hp && !strncmp(hp->h_name, tHost, sizeof(tHost))) {
+trusted = true;
+} else {
+trusted = false;
+}","The code samples use a DNS lookup in order to decide whether or not an inbound request is from a trusted host. If an attacker can poison the DNS cache, they can gain trusted status."
+CWE-672,CWE-672: Operation on a Resource after Expiration or Release,"The product uses, accesses, or otherwise operates on a resource after that resource has been expired, released, or revoked.","Example 1
+
+The following code shows a simple example of a use after free error:
+
+(bad code)
+Example Language: C 
+char* ptr = (char*)malloc (SIZE);
+if (err) {
+abrt = 1;
+free(ptr);
+}
+...
+if (abrt) {
+logError(""operation aborted before commit"", ptr);
+}
+","When an error occurs, the pointer is immediately freed. However, this pointer is later incorrectly used in the logError function."
+CWE-672,CWE-672: Operation on a Resource after Expiration or Release,"The product uses, accesses, or otherwise operates on a resource after that resource has been expired, released, or revoked.","Example 2
+
+The following code shows a simple example of a double free error:
+
+(bad code)
+Example Language: C 
+char* ptr = (char*)malloc (SIZE);
+...
+if (abrt) {
+free(ptr);
+}
+...
+free(ptr);
+","Double free vulnerabilities have two common (and sometimes overlapping) causes:
+
+Error conditions and other exceptional circumstances
+Confusion over which part of the program is responsible for freeing the memory
+Although some double free vulnerabilities are not much more complicated than the previous example, most are spread out across hundreds of lines of code or even different files. Programmers seem particularly susceptible to freeing global variables more than once."
+CWE-672,CWE-672: Operation on a Resource after Expiration or Release,"The product uses, accesses, or otherwise operates on a resource after that resource has been expired, released, or revoked.","Example 3
+
+In the following C/C++ example the method processMessage is used to process a message received in the input array of char arrays. The input message array contains two char arrays: the first is the length of the message and the second is the body of the message. The length of the message is retrieved and used to allocate enough memory for a local char array, messageBody, to be created for the message body. The messageBody is processed in the method processMessageBody that will return an error if an error occurs while processing. If an error occurs then the return result variable is set to indicate an error and the messageBody char array memory is released using the method free and an error message is sent to the logError method.
+
+(bad code)
+Example Language: C 
+#define FAIL 0
+#define SUCCESS 1
+#define ERROR -1
+#define MAX_MESSAGE_SIZE 32
+
+int processMessage(char **message)
+{
+int result = SUCCESS;
+
+int length = getMessageLength(message[0]);
+char *messageBody;
+
+if ((length > 0) && (length < MAX_MESSAGE_SIZE)) {
+messageBody = (char*)malloc(length*sizeof(char));
+messageBody = &message[1][0];
+
+int success = processMessageBody(messageBody);
+
+if (success == ERROR) {
+result = ERROR;
+free(messageBody);
+}
+}
+else {
+printf(""Unable to process message; invalid message length"");
+result = FAIL;
+}
+
+if (result == ERROR) {
+logError(""Error processing message"", messageBody);
+}
+
+return result;
+}
+","However, the call to the method logError includes the messageBody after the memory for messageBody has been released using the free method. This can cause unexpected results and may lead to system crashes. A variable should never be used after its memory resources have been released.
+
+(good code)
+Example Language: C 
+...
+messageBody = (char*)malloc(length*sizeof(char));
+messageBody = &message[1][0];
+
+int success = processMessageBody(messageBody);
+
+if (success == ERROR) {
+result = ERROR;
+logError(""Error processing message"", messageBody);
+free(messageBody);
+}
+..."
+,,,,
+,,,,
+,,,,
