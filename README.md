@@ -36,6 +36,8 @@ This repository is the replication package of **"Out of Sight, Out of Mind: Bett
 Please install them first.
 ```
 unzip VulMaster-main.zip
+cd VulMaster-main
+cd VulMaster-main
 conda create -n vulmaster python=3.8 
 conda activate vulmaster
 pip install -r requirements.txt
