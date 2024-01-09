@@ -20,7 +20,7 @@ This repository is the replication package of **"Out of Sight, Out of Mind: Bett
     * `ChatGPT_generated_fixes_labels.xlsx`: the manually labeled correctness for generated fixes for vulnerable code examples.
    
       
- We stored the datasets you need in order to replicate our experiments at: https://zenodo.org/records/10150013 and [Here](https://drive.google.com/drive/folders/1L5fkJ_J-NvuWlcr-GbfomorxoS6HwuTs?usp=sharing) is CodeT5 model after adaptation. 
+ [Here](https://drive.google.com/drive/folders/1L5fkJ_J-NvuWlcr-GbfomorxoS6HwuTs?usp=sharing) is CodeT5 model after adaptation. Please download it and rename it into './bugfix_pretrain_with_ast/pytorch_model.bin' and put it in the root dir.
  
 * `requirements.txt` contains the dependencies needed.
 
