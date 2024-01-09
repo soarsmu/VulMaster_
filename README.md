@@ -9,7 +9,7 @@ This repository is the replication package of **"Out of Sight, Out of Mind: Bett
 * In the replication, we provide:
   * the scripts we used to:
     * `0a_train.sh`: fine-tune the models with validation.
-    * `0b_test.sh`:  perform inference using the fine-tuned models.
+    * `0b_infer.sh`:  perform inference using the fine-tuned models.
   * the source code we used to:
     * `train_model.py`: the main code for training/validating.
     * `test_model.py`: the main code for testing.
@@ -51,7 +51,7 @@ bash 0a_train.sh
 
 Testing:
 ```
-bash 0b_test.sh
+bash 0b_infer.sh
 ```
 
 Compute metrics:
