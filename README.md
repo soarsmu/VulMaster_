@@ -57,6 +57,9 @@ bash 0b_test.sh
 
 Compute metrics:
 ```
+
+pip install --upgrade tree-sitter
+
 python calculate_metrics_all_models
 ```
 
