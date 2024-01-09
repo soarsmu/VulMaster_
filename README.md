@@ -29,10 +29,13 @@ This repository is the replication package of **"Out of Sight, Out of Mind: Bett
 * If you meet OutOfMemoryError: please note that you typically need around 30 GB GPU memory to run VulMaster.
 
 
+
 ## Install dependencies
 
- Please install them first.
+
+Please install them first.
 ```
+unzip VulMaster-main.zip
 conda create -n vulmaster python=3.8 
 conda activate vulmaster
 pip install -r requirements.txt
